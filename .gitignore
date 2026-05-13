@@ -1,0 +1,21 @@
+# 依存関係
+node_modules/
+
+# ビルド成果物
+dist/
+
+# 環境変数（認証情報を含むため必ずgit管理から除外）
+.env
+.env.local
+.env.*.local
+
+# エディタ設定
+.vscode/
+.idea/
+
+# OS固有ファイル
+.DS_Store
+Thumbs.db
+
+# Viteキャッシュ
+.vite/
