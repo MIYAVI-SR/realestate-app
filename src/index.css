@@ -256,3 +256,170 @@ body {
   font-size: 1rem;
   color: #666;
 }
+
+/* ===== 物件一覧ツールバー ===== */
+.properties-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+/* h2はtoolbar内で使うのでmargin-bottomを上書き */
+.properties-toolbar h2 {
+  margin-bottom: 0;
+}
+
+/* 新規登録ボタン */
+.btn-add {
+  background-color: #1e3a5f;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.btn-add:hover {
+  background-color: #16304f;
+}
+
+/* カード内の編集・削除ボタン領域 */
+.card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.btn-edit {
+  flex: 1;
+  padding: 7px;
+  background: transparent;
+  border: 1px solid #1e3a5f;
+  color: #1e3a5f;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+
+.btn-edit:hover {
+  background: #eef2f8;
+}
+
+.btn-delete {
+  flex: 1;
+  padding: 7px;
+  background: transparent;
+  border: 1px solid #dc2626;
+  color: #dc2626;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+
+.btn-delete:hover {
+  background: #fee2e2;
+}
+
+/* 物件0件のとき */
+.empty-state {
+  text-align: center;
+  padding: 64px 20px;
+  color: #888;
+  line-height: 2;
+}
+
+/* 一覧エリア内のローディング */
+.loading-inline {
+  text-align: center;
+  padding: 48px;
+  color: #666;
+}
+
+/* ===== モーダル ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
+  padding: 24px;
+}
+
+.modal-card {
+  background: white;
+  border-radius: 12px;
+  padding: 32px;
+  width: 100%;
+  max-width: 460px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+  animation: modal-in 0.15s ease;
+}
+
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+.modal-card h3 {
+  font-size: 1.25rem;
+  color: #1e3a5f;
+  margin-bottom: 20px;
+}
+
+/* モーダル内フォームのアクションボタン */
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  justify-content: flex-end;
+}
+
+.btn-secondary {
+  padding: 10px 20px;
+  background: transparent;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #555;
+  transition: background 0.2s;
+}
+
+.btn-secondary:hover {
+  background: #f5f5f5;
+}
+
+.btn-primary-sm {
+  padding: 10px 24px;
+  background-color: #1e3a5f;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+
+.btn-primary-sm:hover {
+  background-color: #16304f;
+}
+
+.btn-primary-sm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

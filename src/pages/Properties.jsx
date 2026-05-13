@@ -1,21 +1,106 @@
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
-
-// ダミー物件データ（実際のDBと連携する際はここを置き換える）
-const DUMMY_PROPERTIES = [
-  { id: 1, name: 'グランドパレス渋谷', rent: 150000, area: '渋谷区', type: '1LDK', floor: '5F', icon: '🏢' },
-  { id: 2, name: 'サンシャインマンション新宿', rent: 120000, area: '新宿区', type: '2LDK', floor: '3F', icon: '🏙️' },
-  { id: 3, name: 'ロイヤルコート池袋', rent: 95000, area: '豊島区', type: '1K', floor: '2F', icon: '🏠' },
-  { id: 4, name: 'ブルースカイ目黒', rent: 180000, area: '目黒区', type: '2LDK', floor: '8F', icon: '🌇' },
-  { id: 5, name: 'シティビュー品川', rent: 135000, area: '品川区', type: '1LDK', floor: '6F', icon: '🏬' },
-  { id: 6, name: 'グリーンヒルズ世田谷', rent: 110000, area: '世田谷区', type: '3LDK', floor: '1F', icon: '🌿' },
-]
+import PropertyForm from '../components/PropertyForm'
 
 const Properties = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const [properties, setProperties] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [showForm, setShowForm] = useState(false)
+  const [editingProperty, setEditingProperty] = useState(null) // nullなら新規登録
 
+  // ----------------------------------------
+  // SELECT: 自分の物件一覧をSupabaseから取得
+  // ----------------------------------------
+  const fetchProperties = useCallback(async () => {
+    setLoading(true)
+    setError('')
+    const { data, error } = await supabase
+      .from('properties')
+      .select('*')
+      .order('created_at', { ascending: false }) // 新着順に表示
+
+    if (error) {
+      setError('物件データの取得に失敗しました')
+    } else {
+      setProperties(data)
+    }
+    setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    fetchProperties()
+  }, [fetchProperties])
+
+  // ----------------------------------------
+  // INSERT / UPDATE: フォームからの保存処理
+  // ----------------------------------------
+  const handleSave = async (formData) => {
+    if (editingProperty) {
+      // 既存物件を更新（UPDATEはRLSで自分の物件のみ許可）
+      const { error } = await supabase
+        .from('properties')
+        .update(formData)
+        .eq('id', editingProperty.id)
+
+      if (error) throw new Error('更新に失敗しました: ' + error.message)
+    } else {
+      // 新規物件を登録（user_idを明示してRLSポリシーに合致させる）
+      const { error } = await supabase
+        .from('properties')
+        .insert({ ...formData, user_id: user.id })
+
+      if (error) throw new Error('登録に失敗しました: ' + error.message)
+    }
+
+    // フォームを閉じて一覧を再取得
+    setShowForm(false)
+    setEditingProperty(null)
+    fetchProperties()
+  }
+
+  // ----------------------------------------
+  // DELETE: 物件の削除
+  // ----------------------------------------
+  const handleDelete = async (id) => {
+    if (!window.confirm('この物件を削除しますか？')) return
+
+    const { error } = await supabase
+      .from('properties')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      setError('削除に失敗しました')
+    } else {
+      // 削除成功 — ローカルの配列からも除去（再フェッチより高速）
+      setProperties((prev) => prev.filter((p) => p.id !== id))
+    }
+  }
+
+  // 編集ボタン: 対象物件をフォームにセットして開く
+  const handleEdit = (property) => {
+    setEditingProperty(property)
+    setShowForm(true)
+  }
+
+  // 新規登録ボタン
+  const handleOpenNew = () => {
+    setEditingProperty(null)
+    setShowForm(true)
+  }
+
+  // フォームを閉じる
+  const handleCloseForm = () => {
+    setShowForm(false)
+    setEditingProperty(null)
+  }
+
+  // ログアウト
   const handleLogout = async () => {
     await supabase.auth.signOut()
     navigate('/login')
@@ -34,44 +119,82 @@ const Properties = () => {
         </div>
       </header>
 
-      {/* 物件一覧 */}
+      {/* メインコンテンツ */}
       <main className="properties-container">
-        <h2>物件一覧</h2>
-        <div className="properties-grid">
-          {DUMMY_PROPERTIES.map((property) => (
-            <div key={property.id} className="property-card">
-              {/* カードヘッダー（アイコン） */}
-              <div className="property-card-header">
-                <span>{property.icon}</span>
-              </div>
-              {/* カード本体 */}
-              <div className="property-card-body">
-                <p className="property-name">{property.name}</p>
-                <div className="property-info">
-                  <div className="property-info-item">
-                    <span className="label">エリア</span>
-                    <span className="value">{property.area}</span>
+        {/* ツールバー: タイトル + 新規登録ボタン */}
+        <div className="properties-toolbar">
+          <h2>物件一覧</h2>
+          <button className="btn-add" onClick={handleOpenNew}>
+            ＋ 新規登録
+          </button>
+        </div>
+
+        {error && <div className="error-message">{error}</div>}
+
+        {loading ? (
+          <div className="loading-inline">読み込み中...</div>
+        ) : properties.length === 0 ? (
+          /* 物件が0件の場合の案内 */
+          <div className="empty-state">
+            <p>登録された物件がありません</p>
+            <p>「＋ 新規登録」から物件を追加してください</p>
+          </div>
+        ) : (
+          /* 物件カード一覧 */
+          <div className="properties-grid">
+            {properties.map((property) => (
+              <div key={property.id} className="property-card">
+                <div className="property-card-header">
+                  <span>🏠</span>
+                </div>
+                <div className="property-card-body">
+                  <p className="property-name">{property.name}</p>
+                  <div className="property-info">
+                    <div className="property-info-item">
+                      <span className="label">エリア</span>
+                      <span className="value">{property.area}</span>
+                    </div>
+                    <div className="property-info-item">
+                      <span className="label">間取り</span>
+                      <span className="value">{property.floor_plan}</span>
+                    </div>
+                    <div className="property-info-item">
+                      <span className="label">家賃</span>
+                      <span className="value rent-value">
+                        ¥{property.rent.toLocaleString()}
+                      </span>
+                    </div>
                   </div>
-                  <div className="property-info-item">
-                    <span className="label">間取り</span>
-                    <span className="value">{property.type}</span>
-                  </div>
-                  <div className="property-info-item">
-                    <span className="label">階数</span>
-                    <span className="value">{property.floor}</span>
-                  </div>
-                  <div className="property-info-item">
-                    <span className="label">家賃</span>
-                    <span className="value rent-value">
-                      ¥{property.rent.toLocaleString()}
-                    </span>
+                  {/* 編集・削除ボタン */}
+                  <div className="card-actions">
+                    <button
+                      className="btn-edit"
+                      onClick={() => handleEdit(property)}
+                    >
+                      編集
+                    </button>
+                    <button
+                      className="btn-delete"
+                      onClick={() => handleDelete(property.id)}
+                    >
+                      削除
+                    </button>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </main>
+
+      {/* 新規登録・編集モーダル */}
+      {showForm && (
+        <PropertyForm
+          property={editingProperty}
+          onSave={handleSave}
+          onClose={handleCloseForm}
+        />
+      )}
     </>
   )
 }
