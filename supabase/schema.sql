@@ -47,3 +47,10 @@ CREATE POLICY "自分の物件のみ更新"
 CREATE POLICY "自分の物件のみ削除"
   ON properties FOR DELETE
   USING (auth.uid() = user_id);
+
+-- ----------------------------------------
+-- ロール権限の付与
+-- ※ SQLエディタで作成したテーブルは自動付与されないため明示的に設定する
+-- authenticated = ログイン済みユーザーが使うロール
+-- ----------------------------------------
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE properties TO authenticated;
